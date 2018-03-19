@@ -55,6 +55,11 @@ class Action(Enum):
     EAST = (0, 1, 1)
     NORTH = (-1, 0, 1)
     SOUTH = (1, 0, 1)
+    NORTHEAST = (-1, 1, np.sqrt(2))
+    NORTHWEST = (-1, -1, np.sqrt(2))
+    SOUTHEAST = (1, 1, np.sqrt(2))
+    SOUTHWEST = (1, -1, np.sqrt(2))
+    
 
     @property
     def cost(self):
@@ -84,7 +89,15 @@ def valid_actions(grid, current_node):
         valid_actions.remove(Action.WEST)
     if y + 1 > m or grid[x, y + 1] == 1:
         valid_actions.remove(Action.EAST)
-
+    if (x - 1 < 0 and y - 1 < 0) or grid[x - 1, y - 1] == 1:
+        valid_actions.remove(Action.NORTHWEST)
+    if (x - 1 < 0 and y + 1 < 0) or grid[x - 1, y + 1] == 1:
+        valid_actions.remove(Action.NORTHEAST)
+    if (x + 1 < 0 and y - 1 < 0) or grid[x + 1, y - 1] == 1:
+        valid_actions.remove(Action.SOUTHWEST)
+    if (x + 1 < 0 and y + 1 < 0) or grid[x + 1, y + 1] == 1:
+        valid_actions.remove(Action.SOUTHEAST)
+    
     return valid_actions
 
 
@@ -123,7 +136,8 @@ def a_star(grid, h, start, goal):
                     queue.put((new_cost, next_node))
 
                     branch[next_node] = (new_cost, current_node, a)
-
+    
+    print('branch {}'.format(len(branch)))
     if found:
         # retrace steps
         n = goal
