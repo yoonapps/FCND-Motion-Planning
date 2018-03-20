@@ -105,6 +105,7 @@ class MotionPlanning(Drone):
         print("manual transition")
         self.stop()
         self.in_mission = False
+        print('Mission execution time: {}'.format(time.time() - self.start_time))
 
     def send_waypoints(self):
         print("Sending waypoints to simulator ...")
@@ -168,6 +169,7 @@ class MotionPlanning(Drone):
         self.send_waypoints()
 
     def start(self):
+        self.start_time = time.time()
         self.start_log("Logs", "NavLog.txt")
 
         print("starting connection")
