@@ -43,47 +43,36 @@ Now the drone is in the `WAYPOINT` state. The first waypoint in the list is acce
 
 The `landing_transition` commands the drone to land. As the drone lands, the `velocity_callback` is continuously called. When the difference between the altitudes of `global_position` and `global_home` are less than 0.1 meters, and the altitude of the `local_position` is less than 0.01 meters, the `disarming_transition` function is called. The drone is disarmed, released of control, state becomes `DISARMING`, and which in turn, the state callback will call the  `manual_transition` which terminates the mission.
 
-
-These scripts contain a basic planning implementation that includes...
-
-And here's a lovely image of my results (ok this image has nothing to do with it, but it's a nice example of how to include images in your writeup!)
-![Top Down View](./misc/high_up.png)
-
-Here's | A | Snappy | Table
---- | --- | --- | ---
-1 | `highlight` | **bold** | 7.41
-2 | a | b | c
-3 | *italic* | text | 403
-4 | 2 | 3 | abcd
-
 ### Implementing Your Path Planning Algorithm
 
 #### 1. Set your global home position
-Here students should read the first line of the csv file, extract lat0 and lon0 as floating point values and use the self.set_home_position() method to set global home. Explain briefly how you accomplished this in your code.
-
-
-And here is a lovely picture of our downtown San Francisco environment from above!
-![Map of SF](./misc/map.png)
+The global home position is set by reading the first line of data from the `colliders.csv` file. The `np.genfromtxt` has a parameter `max_rows` which makes it easy to grab just the first line of the file. A comma delimiter is used so the `split()` function will easily break both the latitude and longitude apart from their labels. These values are casted as `float`s and passed into `set_home_position`.
 
 #### 2. Set your current local position
-Here as long as you successfully determine your local position relative to global home you'll be all set. Explain briefly how you accomplished this in your code.
-
-
-Meanwhile, here's a picture of me flying through the trees!
-![Forest Flying](./misc/in_the_trees.png)
+Converting the current position from global to local is done simply by passing the `global_position` and `global_home` into the `global_to_local` function.
 
 #### 3. Set grid start position from local position
-This is another step in adding flexibility to the start location. As long as it works you're good to go!
+In order to set the starting grid position from the local position rather than the map center, the current local position obtained above must be offset by the minimum north and east values returned from the `create_grid`. This is because the southwest corner is the origin of the grid.
 
 #### 4. Set grid goal position from geodetic coords
-This step is to add flexibility to the desired goal location. Should be able to choose any (lat, lon) within the map and have it rendered to a goal location on the grid.
+The grid goal position is obtained in a similar manner to the grid start position. The arbitrary global goal position is converted to local by using `global_to_local`. The resulting local coordinates are then offset by the minimum north and east values from the grid.
 
 #### 5. Modify A* to include diagonal motion (or replace A* altogether)
-Minimal requirement here is to modify the code in planning_utils() to update the A* implementation to include diagonal motions on the grid that have a cost of sqrt(2), but more creative solutions are welcome. Explain the code you used to accomplish this step.
+Enabling diagonal movement is done by modifying the `Action` enum class. Four additional cases were added: 
+	```
+	NORTHEAST = (-1, 1, np.sqrt(2))
+    NORTHWEST = (-1, -1, np.sqrt(2))
+    SOUTHEAST = (1, 1, np.sqrt(2))
+    SOUTHWEST = (1, -1, np.sqrt(2))
+    ```
+Each case has the appropriate deltas corresponding with the diagonal direction as well as the cost for the action.
+
+Additionally, the `valid_actions` requires 4 more checks on whether the grid space in relation to the action has an obstacle. Each check remove the related diagonal action from the list of valid actions.
+
+By modifying the `Action` enum class, the A* implementation works as is.
 
 #### 6. Cull waypoints 
-For this step you can use a collinearity test or ray tracing method like Bresenham. The idea is simply to prune your path of unnecessary waypoints. Explain the code you used to accomplish this step.
-
+The pruning method used for this project is the collinearity check. The path found by the A* algorithm is iterated with a `while` loop. 3 path values are checked each iteration. The determinant of the three vectors are calculated. If the determinant is zero (or almost zero, in this case less than 0.000001), then the three points are deemed in a single line. This removes the path coordinate from the list of paths.
 
 
 ### Execute the flight
